@@ -1,17 +1,11 @@
 import streamlit as st
 import pandas as pd
 import sqlite3 as sqlite
-
-
-
-
-
-
+from st_aggrid import AgGrid, GridUpdateMode
+from st_aggrid.grid_options_builder import GridOptionsBuilder
 
 def main():
     # Streamlit API の title を使用して文字表示
-    st.title("課題メモアプリ")
-
     #データベースにアクセス
     db = sqlite.connect('memo_db')
     #データベースにmemo_dbがない場合は作成する
@@ -22,18 +16,26 @@ def main():
     cursor.execute("SELECT * FROM memo_db")
 
     list = cursor.fetchall()
+    ids = []
     tasks = []
     limit_dates = []
     for item in list:
+        ids.append(item[0])
         tasks.append(item[1])
         limit_dates.append(item[2])
 
     df = pd.DataFrame(data={
-        'Task':tasks,
-        'Limit':limit_dates
+        'ID':ids,
+        'TASK':tasks,
+        'LIMIT':limit_dates
     })
 
-    st.write('タスク管理表', df)
+    st.subheader('タスク管理表')
+    gd = GridOptionsBuilder.from_dataframe(df)
+    gd.configure_selection(selection_mode='multiple', use_checkbox=True)
+    gridoptions = gd.build()
+    gridTable = AgGrid(df, gridOptions=gridoptions, update_mode=GridUpdateMode.SELECTION_CHANGED)
+    st.session_state["selected_rows"] = gridTable.selected_rows
 
     task = st.text_input('課題')
     limit = st.date_input('期限')
@@ -43,7 +45,6 @@ def main():
 
     #タスクを表に追加する関数
     def addTaskToDatabase():
-        print("addTaskToDatabase:Call")
         task = st.session_state["task"]
         limit = st.session_state["limit"]
         if not task:
@@ -59,7 +60,6 @@ def main():
 
     #表のデータをすべて削除する関数
     def deleteTask():
-        print("deleteTask:Call")
         db = sqlite.connect('memo_db')
         cursor = db.cursor()
         cursor.execute("DELETE FROM memo_db")
@@ -67,44 +67,17 @@ def main():
 
     st.button("表の削除", on_click=deleteTask)
 
+    def deleteSelectedTask():
+        db = sqlite.connect('memo_db')
+        cursor = db.cursor()
+        selected_rows = st.session_state["selected_rows"]
+        for row in selected_rows:
+            id = row["ID"]
+            cursor.execute(f"DELETE FROM memo_db WHERE id == '{id}'")
+            db.commit()
+            
+    st.button("選択したタスクの削除", on_click=deleteSelectedTask)
 
 if __name__ == '__main__':
+  st.set_page_config(page_title="テスト結果", layout="wide")
   main()
-    
-
-# def main():
-#     # セッション変数が存在しないときは初期化する
-#     # ここでは 'counter' というセッション変数を作っている
-#     if 'counter' not in st.session_state:
-#         st.session_state['counter'] = 0
-
-#     # セッション変数の状態を表示する
-#     msg = f"Counter value: {st.session_state['counter']}"
-#     st.write(msg)
-
-#     # ボタンが押されたときに発火するコールバック
-#     def plus_one_clicks():
-#         print("call")
-#         # ボタンが押されたらセッション変数の値を増やす
-#         st.session_state['counter'] += 1
-#     # ボタンを作成するときにコールバックを登録しておく
-#     st.button(label='+1',
-#               on_click=plus_one_clicks)
-
-#     # ボタンが押されたらセッション変数の値を減らすバージョン
-#     def minus_one_clicks():
-#         print("call")
-#         st.session_state['counter'] -= 1
-#     st.button(label='-1',
-        
-#               on_click=minus_one_clicks)
-
-#     # セッション変数の値をリセットするボタン
-#     def reset_clicks():
-#         st.session_state['counter'] = 0
-#     st.button(label='Reset',
-#               on_click=reset_clicks)
-
-
-# if __name__ == '__main__':
-#     main()
