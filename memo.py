@@ -11,6 +11,11 @@ def addTaskToDatabase(db, task, limit):
             INSERT INTO memo_db(task, limit_date) VALUES('{task}', '{limit}')""")
         db.commit()
 
+def deleteTask(db):
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM memo_db")
+    db.commit()
+
 st.title("課題メモアプリ")
 
 #データベースにアクセス
@@ -37,9 +42,11 @@ df = pd.DataFrame(data={
 
 st.write('タスク管理表', df)
 
+
 task = st.text_input('課題')
 limit = st.date_input('期限')
 
 st.button('追加する', on_click=addTaskToDatabase(db, task, limit))
+st.button("表の削除", on_click=deleteTask(db))
     
 
