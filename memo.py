@@ -5,9 +5,11 @@ import sqlite3 as sqlite
 def addTaskToDatabase(db, task, limit):
     if not task:
         st.error('タスクの名前が記入されていません')
-    db.execute(f"""
-        INSERT INTO memo_db(task, limit_date) VALUES('{task}', '{limit}')""")
-    db.commit()
+    else:
+        cursor = db.cursor()
+        cursor.execute(f"""
+            INSERT INTO memo_db(task, limit_date) VALUES('{task}', '{limit}')""")
+        db.commit()
 
 st.title("課題メモアプリ")
 
